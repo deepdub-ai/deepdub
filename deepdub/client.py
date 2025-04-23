@@ -115,20 +115,49 @@ class DeepdubClient:
         return self.post(f"/voice", json=voice)
 
 
-    def tts(self, text: str, voice_reference: Optional[Union[bytes, str, Path]] = None, voice_prompt_id: Optional[str] = None, model: str = "dd-etts-2.5", locale: str = "en-US") -> str:
+    def tts(self, text: str, 
+            voice_reference: Optional[Union[bytes, str, Path]] = None,
+            voice_prompt_id: Optional[str] = None, 
+            model: str = "dd-etts-2.5", 
+            locale: str = "en-US",
+            temperature: Optional[float] = None,
+            variance: Optional[float] = None,
+            duration: Optional[float] = None,
+            tempo: Optional[float] = None,
+            seed: Optional[int] = None,
+            prompt_boost: Optional[bool] = None,
+            accent_base_locale: Optional[str] = None,
+            accent_locale: Optional[str] = None,
+            accent_ratio: Optional[float] = None,
+            **kwargs) -> str:
         """
         TTS (Text-to-Speech) endpoint.
         """
+        #tempo and duration are mutually exclusive
+        assert tempo is None or duration is None, "Tempo and duration are mutually exclusive"
         assert voice_reference is not None or voice_prompt_id is not None, "Either voice_reference or voice_prompt_id must be provided"
         if voice_reference is not None:
             voice_reference, _ = self.data_input_preprocess(voice_reference)
         assert model in ["dd-etts-2.5", "dd-etts-1.1"], "Invalid model"
+        assert [3,0].__contains__(sum([accent_base_locale is not None, accent_locale is not None, accent_ratio is not None])), "All three of accent_base_locale, accent_locale, and accent_ratio must be provided or none of them must be provided"
         return self.post(f"/tts", json={
                 "targetText": text,
                 "model": model,
                 "voicePromptId": voice_prompt_id,
                 "locale": locale,
                 "voiceReference": voice_reference,
+                "temperature": temperature,
+                "variance": variance,
+                "duration": duration,
+                "seed": seed,
+                "tempo": tempo,
+                "promptBoost": prompt_boost,
+                "accentControl": {
+                    "accentBaseLocale": accent_base_locale,
+                    "accentLocale": accent_locale,
+                    "accentRatio": accent_ratio
+                } if accent_base_locale is not None and accent_locale is not None and accent_ratio is not None else None,
+                **kwargs
             })
     
     def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-2.5", locale: str = "en-US") -> str:
