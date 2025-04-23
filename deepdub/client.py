@@ -23,11 +23,11 @@ class DeepdubClient:
                 data = base64.b64encode(data).decode("utf-8")
         elif isinstance(data, bytes):
             data = base64.b64encode(data).decode("utf-8")
-            filename = uuid4()
+            filename = str(uuid4())
         elif isinstance(data, str):
             try:
                 test_data = base64.b64decode(data)
-                filename = uuid4()
+                filename = str(uuid4())
             except Exception as e:
                 raise ValueError("string data must be base64 encoded")
         else:
@@ -107,7 +107,7 @@ class DeepdubClient:
             "locale": locale,
             "publish": publish,
             "speaking_style": speaking_style,
-            "speaker_id": uuid4(),
+            "speaker_id": str(uuid4()),
             "title": f"{name}-{gender}-{age}-{locale}-{speaking_style}",
             "data": data,
             "filename": filename
