@@ -3,10 +3,11 @@ import os
 from uuid import uuid4
 import json
 import requests
+import websockets
 from typing import Dict, List, Any, Optional, Union
 from functools import partial
 from pathlib import Path
-
+from contextlib import asynccontextmanager
 
 MODEL_LIST = ["dd-etts-2.5", "dd-etts-1.1"]
 
@@ -35,7 +36,7 @@ class DeepdubClient:
 
         return data, filename
 
-    def __init__(self, base_url: str = "https://restapi.deepdub.ai/api/v1", api_key: Optional[str] = None):
+    def __init__(self, base_url: str = "https://restapi.deepdub.ai/api/v1", base_websocket_url: str = "wss://wsapi.deepdub.ai/open", api_key: Optional[str] = None):
         """
         Initialize the DeepDub API client.
         
@@ -44,6 +45,7 @@ class DeepdubClient:
             api_key: API key for authentication (if required)
         """
         self.base_url = base_url
+        self.base_websocket_url = base_websocket_url
         self.api_key = api_key
         if not self.api_key:
             self.api_key = os.getenv("DEEPDUB_API_KEY", None)
@@ -53,6 +55,9 @@ class DeepdubClient:
             "Content-Type": "application/json",
             "x-api-key": self.api_key
         }
+        self.dd_wav_header_len = 0x44
+
+        self.websocket = None
 
     def proxy_request(self, method: str, url: str, *args, **kwargs) -> Any:
         url = f"{self.base_url}{url}"
@@ -159,7 +164,6 @@ class DeepdubClient:
                 } if accent_base_locale is not None and accent_locale is not None and accent_ratio is not None else None,
                 **kwargs
             })
-    
     def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-2.5", locale: str = "en-US") -> str:
         """
         TTS (Text-to-Speech) endpoint.
@@ -171,3 +175,90 @@ class DeepdubClient:
                 "voicePromptId": voice_prompt_id,
                 "locale": locale,
             })
+
+    @asynccontextmanager
+    async def async_connect(self):
+        websocket_url = "wss://wsapi.deepdub.ai/open"
+        headers = {"x-api-key": self.api_key}
+        assert self.websocket is None, "Already connected"
+        async with websockets.connect(websocket_url, additional_headers=headers) as websocket:
+            self.websocket = websocket
+            yield self
+            self.websocket = None
+
+    async def async_tts(self, text: str,
+            voice_prompt_id: Optional[str] = None,
+            model: str = "dd-etts-2.5",
+            locale: str = "en-US",
+            temperature: Optional[float] = None,
+            variance: Optional[float] = None,
+            duration: Optional[float] = None,
+            tempo: Optional[float] = None,
+            seed: Optional[int] = None,
+            prompt_boost: Optional[bool] = None,
+            accent_base_locale: Optional[str] = None,
+            accent_locale: Optional[str] = None,
+            accent_ratio: Optional[float] = None,
+            format: str = "wav",
+            sample_rate: int = 48000,
+            verbose: bool = False,
+            **kwargs) -> str:
+        """
+        TTS (Text-to-Speech) endpoint.
+        """
+        #tempo and duration are mutually exclusive
+        assert tempo is None or duration is None, "Tempo and duration are mutually exclusive"
+        assert model in ["dd-etts-2.5", "dd-etts-1.1"], "Invalid model"
+        assert format in ["headerless-wav", "wav", "mp3", "opus", "mulaw"], "Invalid format"
+        if format == "headerless-wav":
+            format = "wav"
+            headerless = True
+        assert sample_rate in [8000, 16000, 22050, 24000, 44100, 48000], "Invalid sample rate"
+        assert [3,0].__contains__(sum([accent_base_locale is not None, accent_locale is not None, accent_ratio is not None])), "All three of accent_base_locale, accent_locale, and accent_ratio must be provided or none of them must be provided"
+        generation_id = str(uuid4())
+        message_to_send = {
+                "action": "text-to-speech",
+                "generationId": generation_id,
+                "targetText": text,
+                "model": model,
+                "voicePromptId": voice_prompt_id,
+                "locale": locale,
+                "temperature": temperature,
+                "variance": variance,
+                "duration": duration,
+                "seed": seed,
+                "tempo": tempo,
+                "promptBoost": prompt_boost,
+                "accentControl": {
+                    "accentBaseLocale": accent_base_locale,
+                    "accentLocale": accent_locale,
+                    "accentRatio": accent_ratio
+                } if accent_base_locale is not None and accent_locale is not None and accent_ratio is not None else None,
+                "format": format,
+                "sampleRate": sample_rate,
+                **kwargs
+            }
+        await self.websocket.send(json.dumps(message_to_send))
+        if verbose:
+            print(f"sent message {message_to_send}")
+        while True:
+            message_received = await self.websocket.recv()
+            message_received = json.loads(message_received)
+            if message_received.get("error"):
+                raise Exception(message_received["error"])
+            if message_received.get("generationId") != generation_id:
+                continue
+            if verbose:
+                print(f"received chunk {message_received['generationId']} - {message_received.get('index', 'unknown') }")
+            if message_received.get("data"):
+                if verbose:
+                    print(f"received data {message_received['data']}")
+                data = base64.b64decode(message_received['data'])
+                if message_received.get("format") == "wav" and headerless:
+                    data = data[self.dd_wav_header_len:]
+                    AudioSample(data)
+                yield data
+            if message_received.get("isFinished"):
+                if verbose:
+                    print(f"finished generation {message_received['generationId']}")
+                break
