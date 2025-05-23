@@ -7,5 +7,5 @@ upload:
 	twine upload dist/*
 
 clean:
-	rm dist/*
+	rm -f dist/*
 

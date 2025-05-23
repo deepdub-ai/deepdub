@@ -143,7 +143,8 @@ class DeepdubClient:
         assert voice_reference is not None or voice_prompt_id is not None, "Either voice_reference or voice_prompt_id must be provided"
         if voice_reference is not None:
             voice_reference, _ = self.data_input_preprocess(voice_reference)
-        assert model in ["dd-etts-2.5", "dd-etts-1.1"], "Invalid model"
+        
+        assert model in ["dd-etts-2.5", "dd-etts-1.1"] or not model.startswith("dd-"), "Invalid model"
         assert [3,0].__contains__(sum([accent_base_locale is not None, accent_locale is not None, accent_ratio is not None])), "All three of accent_base_locale, accent_locale, and accent_ratio must be provided or none of them must be provided"
         return self.post(f"/tts", json={
                 "targetText": text,
@@ -208,7 +209,7 @@ class DeepdubClient:
         """
         #tempo and duration are mutually exclusive
         assert tempo is None or duration is None, "Tempo and duration are mutually exclusive"
-        assert model in ["dd-etts-2.5", "dd-etts-1.1"], "Invalid model"
+        #assert model in ["dd-etts-2.5", "dd-etts-1.1"], "Invalid model"
         assert format in ["headerless-wav", "wav", "mp3", "opus", "mulaw"], "Invalid format"
         if format == "headerless-wav":
             format = "wav"
@@ -256,7 +257,6 @@ class DeepdubClient:
                 data = base64.b64decode(message_received['data'])
                 if message_received.get("format") == "wav" and headerless:
                     data = data[self.dd_wav_header_len:]
-                    AudioSample(data)
                 yield data
             if message_received.get("isFinished"):
                 if verbose:

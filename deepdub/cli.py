@@ -1,4 +1,5 @@
 import time
+import datetime
 import sys
 import asyncio
 import click
@@ -41,7 +42,7 @@ def add_voice(ctx, file: str, name: str, gender: str, locale: str, publish: bool
 def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
     response = client.tts(text=text, voice_prompt_id=voice_prompt_id, locale=locale, model=model)
-    fname = f"Deepdub-{text.replace(' ', '-')}-{time.strftime('%Y-%m-%d-%H-%M-%S')}.mp3"
+    fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3"
     with open(fname, "wb") as f:
         f.write(response)
     print(f"TTS response saved to {fname}")
@@ -55,8 +56,8 @@ def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str):
 def tts_from_ref(ctx, text: str, voice_reference: str, locale: str, model: str):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
     response = client.tts(text=text, voice_reference=Path(voice_reference), locale=locale, model=model)
-    fname = f"Deepdub-{text.replace(' ', '-')}-{time.strftime('%Y-%m-%d-%H-%M-%S')}.mp3"
-    with open(f"Deepdub-{text.replace(' ', '-')}-{time.strftime('%Y-%m-%d-%H-%M-%S')}.mp3", "wb") as f:
+    fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3"
+    with open(fname, "wb") as f:
         f.write(response if isinstance(response, bytes) else str(response).encode("utf-8"))
     print(f"TTS response saved to {fname}")
 
