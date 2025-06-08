@@ -181,10 +181,14 @@ class DeepdubClient:
     async def async_connect(self):
         headers = {"x-api-key": self.api_key}
         assert self.websocket is None, "Already connected"
-        async with websockets.connect(self.base_websocket_url, additional_headers=headers) as websocket:
-            self.websocket = websocket
-            yield self
+        try:
+            async with websockets.connect(self.base_websocket_url, additional_headers=headers) as websocket:
+                self.websocket = websocket
+                yield self
+                self.websocket = None
+        except Exception as e:
             self.websocket = None
+            raise e
 
     async def async_tts(self, text: str,
             voice_prompt_id: Optional[str] = None,
