@@ -258,7 +258,7 @@ class DeepdubClient:
                 if verbose:
                     print(f"received data {message_received['data']}")
                 data = base64.b64decode(message_received['data'])
-                if message_received.get("format") == "wav" and headerless:
+                if format == "wav" and headerless:
                     data = data[self.dd_wav_header_len:]
                 yield data
             if message_received.get("isFinished"):
