@@ -66,7 +66,8 @@ class DeepdubClient:
         else:
             kwargs["headers"] = self.headers
         response = requests.__getattribute__(method)(url, *args, **kwargs)
-        if response.headers['content-type'].startswith('application/json'):
+        response.raise_for_status()
+        if response.headers.get('content-type', '').startswith('application/json'):
             return response.json()
         else:
             return response.content
