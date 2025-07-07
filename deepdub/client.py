@@ -135,11 +135,14 @@ class DeepdubClient:
             accent_base_locale: Optional[str] = None,
             accent_locale: Optional[str] = None,
             accent_ratio: Optional[float] = None,
+            sample_rate: Optional[int] = None,
+            format: str = "mp3",
             **kwargs) -> str:
         """
         TTS (Text-to-Speech) endpoint.
         """
         #tempo and duration are mutually exclusive
+        assert format in ["headerless-wav", "mp3", "opus", "mulaw"], "Invalid format"
         assert tempo is None or duration is None, "Tempo and duration are mutually exclusive"
         assert voice_reference is not None or voice_prompt_id is not None, "Either voice_reference or voice_prompt_id must be provided"
         if voice_reference is not None:
@@ -147,6 +150,8 @@ class DeepdubClient:
         
         assert model in ["dd-etts-2.5", "dd-etts-1.1"] or not model.startswith("dd-"), "Invalid model"
         assert [3,0].__contains__(sum([accent_base_locale is not None, accent_locale is not None, accent_ratio is not None])), "All three of accent_base_locale, accent_locale, and accent_ratio must be provided or none of them must be provided"
+        assert sample_rate in [None, 8000, 16000, 22050, 24000, 44100, 48000], "Invalid sample rate"
+
         return self.post(f"/tts", json={
                 "targetText": text,
                 "model": model,
@@ -164,6 +169,8 @@ class DeepdubClient:
                     "accentLocale": accent_locale,
                     "accentRatio": accent_ratio
                 } if accent_base_locale is not None and accent_locale is not None and accent_ratio is not None else None,
+                "sampleRate": sample_rate,
+                "format": format,
                 **kwargs
             })
     def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-2.5", locale: str = "en-US") -> str:
@@ -205,7 +212,7 @@ class DeepdubClient:
             accent_locale: Optional[str] = None,
             accent_ratio: Optional[float] = None,
             format: str = "wav",
-            sample_rate: int = 48000,
+            sample_rate: Optional[int] = None,
             verbose: bool = False,
             **kwargs) -> str:
         """
@@ -218,7 +225,7 @@ class DeepdubClient:
         if format == "headerless-wav":
             format = "wav"
             headerless = True
-        assert sample_rate in [8000, 16000, 22050, 24000, 44100, 48000], "Invalid sample rate"
+        assert sample_rate in [None, 8000, 16000, 22050, 24000, 44100, 48000], "Invalid sample rate"
         assert [3,0].__contains__(sum([accent_base_locale is not None, accent_locale is not None, accent_ratio is not None])), "All three of accent_base_locale, accent_locale, and accent_ratio must be provided or none of them must be provided"
         generation_id = str(uuid4())
         message_to_send = {
