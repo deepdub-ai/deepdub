@@ -222,6 +222,7 @@ class DeepdubClient:
         assert tempo is None or duration is None, "Tempo and duration are mutually exclusive"
         #assert model in ["dd-etts-2.5", "dd-etts-1.1"], "Invalid model"
         assert format in ["headerless-wav", "wav", "mp3", "opus", "mulaw"], "Invalid format"
+        headerless = False
         if format == "headerless-wav":
             format = "wav"
             headerless = True
