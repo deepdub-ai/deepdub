@@ -212,6 +212,7 @@ class DeepdubClient:
             accent_locale: Optional[str] = None,
             accent_ratio: Optional[float] = None,
             format: str = "wav",
+            generation_id: Optional[str] = None,
             sample_rate: Optional[int] = None,
             verbose: bool = False,
             **kwargs) -> str:
@@ -228,7 +229,14 @@ class DeepdubClient:
             headerless = True
         assert sample_rate in [None, 8000, 16000, 22050, 24000, 44100, 48000], "Invalid sample rate"
         assert [3,0].__contains__(sum([accent_base_locale is not None, accent_locale is not None, accent_ratio is not None])), "All three of accent_base_locale, accent_locale, and accent_ratio must be provided or none of them must be provided"
-        generation_id = str(uuid4())
+        # Handle generation_id
+        if generation_id is None:
+            generation_id = str(uuid4())
+        else:
+            try:
+                UUID(generation_id)  # validate UUID
+            except ValueError:
+                raise ValueError(f"Invalid UUID string for generation_id: {generation_id}")
         message_to_send = {
                 "action": "text-to-speech",
                 "generationId": generation_id,
