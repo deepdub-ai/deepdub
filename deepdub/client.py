@@ -1,6 +1,6 @@
 import base64
 import os
-from uuid import uuid4
+from uuid import uuid4, UUID
 import json
 import requests
 import websockets
