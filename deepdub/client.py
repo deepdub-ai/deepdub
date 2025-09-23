@@ -1,13 +1,16 @@
+import asyncio
 import base64
-import os
-from uuid import uuid4, UUID
 import json
-import requests
-import websockets
-from typing import Dict, List, Any, Optional, Union
+import os
+from collections import defaultdict
+from contextlib import asynccontextmanager
 from functools import partial
 from pathlib import Path
-from contextlib import asynccontextmanager
+from typing import Any, Dict, List, Optional, Union
+from uuid import UUID, uuid4
+
+import requests
+import websockets
 
 MODEL_LIST = ["dd-etts-2.5", "dd-etts-1.1"]
 
@@ -173,29 +176,60 @@ class DeepdubClient:
                 "format": format,
                 **kwargs
             })
+
     def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-2.5", locale: str = "en-US") -> str:
         """
         TTS (Text-to-Speech) endpoint.
         """
         assert model in ["dd-etts-2.5", "dd-etts-1.1"], "Invalid model"
-        return self.post(f"/tts/retroactive", json={
+        return self.post("/tts/retroactive", json={
                 "targetText": text,
                 "model": "dd-etts-2.5",
                 "voicePromptId": voice_prompt_id,
                 "locale": locale,
             })
+    async def _ws_listener(self):
+        try:
+            while True:
+                message = await self.websocket.recv()
+                if message:
+                    try:
+                        message = json.loads(message)
+                    except Exception:
+                        print(f"[_ws_listener] Error parsing message: {message}")
+                        raise RuntimeError(f"Error parsing message: {message}")
+
+                    generation_id = message.get("generationId")
+                    if not generation_id:
+                        raise RuntimeError("Didn't receive a generationId")
+
+                    self._ws_queues[generation_id].put_nowait(message)
+        except websockets.exceptions.ConnectionClosedOK:
+            pass
 
     @asynccontextmanager
     async def async_connect(self):
         headers = {"x-api-key": self.api_key}
         assert self.websocket is None, "Already connected"
+        new_client = DeepdubClient(
+                base_url=self.base_url,
+                base_websocket_url=self.base_websocket_url,
+                api_key=self.api_key
+            )
         try:
             async with websockets.connect(self.base_websocket_url, additional_headers=headers) as websocket:
-                self.websocket = websocket
-                yield self
-                self.websocket = None
+
+                new_client.websocket = websocket
+                new_client._ws_queues = defaultdict(asyncio.Queue)
+                new_client._ws_listener_task = asyncio.create_task(new_client._ws_listener())
+                yield new_client
+                await new_client.websocket.close()
+                await new_client._ws_listener_task
+                new_client.websocket = None
+                new_client._ws_listener_task = None
+                new_client._ws_queues = None
         except Exception as e:
-            self.websocket = None
+            new_client.websocket = None
             raise e
 
     async def async_tts(self, text: str,
@@ -263,8 +297,7 @@ class DeepdubClient:
         if verbose:
             print(f"sent message {message_to_send}")
         while True:
-            message_received = await self.websocket.recv()
-            message_received = json.loads(message_received)
+            message_received = await self._ws_queues[generation_id].get()
             if message_received.get("error"):
                 raise Exception(message_received["error"])
             if message_received.get("generationId") != generation_id:
