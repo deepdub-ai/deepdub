@@ -47,8 +47,8 @@ class DeepdubClient:
             base_url: Base URL for the DeepDub API
             api_key: API key for authentication (if required)
         """
-        self.base_url = base_url
-        self.base_websocket_url = base_websocket_url
+        self.base_url = os.environ.get("DEEPDUB_BASE_URL", base_url)
+        self.base_websocket_url = os.environ.get("DEEPDUB_BASE_WEBSOCKET_URL", base_websocket_url)
         self.api_key = api_key
         if not self.api_key:
             self.api_key = os.getenv("DEEPDUB_API_KEY", None)
