@@ -329,16 +329,24 @@ class DeepdubClient:
 
     @asynccontextmanager
     async def async_stream_connect(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
-        sample_rate: int = 16000, temperature: float = None, variance: float = None, tempo: float = None):
+        sample_rate: int = 16000, temperature: float = None, variance: float = None, 
+        tempo: float = None, prompt_boost: bool = False, 
+        accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None,
+        verbose: bool = False):
         async with self.async_connect(streaming_input=True) as conn:
             response = await conn.async_stream_config(model=model, 
                 locale=locale, voice_prompt_id=voice_prompt_id, 
-                format=format, sample_rate=sample_rate, 
-                temperature=temperature, variance=variance, tempo=tempo)
-            print(f"config ok: {response}")
+                format=format, sample_rate=sample_rate,     
+                temperature=temperature, variance=variance, tempo=tempo, prompt_boost=prompt_boost,
+                accent_base_locale=accent_base_locale, accent_locale=accent_locale, accent_ratio=accent_ratio)
+            if verbose:
+                print(f"config ok: {response}")
             yield conn
 
-    async def async_stream_config(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", sample_rate: int = 16000, temperature: float = None, variance: float = None, tempo: float = None):
+    async def async_stream_config(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
+    sample_rate: int = 16000, temperature: float = None, variance: float = None, 
+    tempo: float = None, prompt_boost: bool = None,
+    accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None):
         self.streaming_format = format
         message_to_send = {
             "action": "stream-config",
@@ -351,6 +359,12 @@ class DeepdubClient:
                 "temperature": temperature,
                 "variance": variance,
                 "tempo": tempo,
+                "promptBoost": prompt_boost,
+                "accentControl": {
+                    "accentBaseLocale": accent_base_locale,
+                    "accentLocale": accent_locale,
+                    "accentRatio": accent_ratio
+                } if accent_base_locale is not None and accent_locale is not None and accent_ratio is not None else None,
             }
         }
         await self.websocket.send(json.dumps(message_to_send))
