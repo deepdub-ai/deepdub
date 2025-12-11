@@ -39,7 +39,10 @@ class DeepdubClient:
 
         return data, filename
 
-    def __init__(self, base_url: str = "https://restapi.deepdub.ai/api/v1", base_websocket_url: str = "wss://wsapi.deepdub.ai/open", api_key: Optional[str] = None):
+    def __init__(self, base_url: str = "https://restapi.deepdub.ai/api/v1", 
+            base_websocket_url: str = "wss://wsapi.deepdub.ai/open", 
+            base_websocket_streaming_url: str = "wss://wss.deepdub.ai/ws", 
+            api_key: Optional[str] = None):
         """
         Initialize the DeepDub API client.
         
@@ -49,6 +52,7 @@ class DeepdubClient:
         """
         self.base_url = os.environ.get("DEEPDUB_BASE_URL", base_url)
         self.base_websocket_url = os.environ.get("DEEPDUB_BASE_WEBSOCKET_URL", base_websocket_url)
+        self.base_websocket_streaming_url = os.environ.get("DEEPDUB_BASE_WEBSOCKET_STREAMING_URL", base_websocket_streaming_url)
         self.api_key = api_key
         if not self.api_key:
             self.api_key = os.getenv("DEEPDUB_API_KEY", None)
@@ -208,23 +212,30 @@ class DeepdubClient:
             pass
 
     @asynccontextmanager
-    async def async_connect(self):
+    async def async_connect(self, streaming_input: bool = False):
         headers = {"x-api-key": self.api_key}
         assert self.websocket is None, "Already connected"
         new_client = DeepdubClient(
                 base_url=self.base_url,
                 base_websocket_url=self.base_websocket_url,
+                base_websocket_streaming_url=self.base_websocket_streaming_url,
                 api_key=self.api_key
             )
         try:
-            async with websockets.connect(self.base_websocket_url, additional_headers=headers) as websocket:
+            async with websockets.connect(self.base_websocket_url if not streaming_input else self.base_websocket_streaming_url, additional_headers=headers) as websocket:
 
                 new_client.websocket = websocket
-                new_client._ws_queues = defaultdict(asyncio.Queue)
-                new_client._ws_listener_task = asyncio.create_task(new_client._ws_listener())
+                if not streaming_input:
+                    new_client._ws_queues = defaultdict(asyncio.Queue)
+                    new_client._ws_listener_task = asyncio.create_task(new_client._ws_listener())
+                else:
+                    new_client._ws_queues = None
+                    new_client._ws_listener_task = None
                 yield new_client
                 await new_client.websocket.close()
-                await new_client._ws_listener_task
+
+                if not streaming_input:
+                    await new_client._ws_listener_task
                 new_client.websocket = None
                 new_client._ws_listener_task = None
                 new_client._ws_queues = None
@@ -315,3 +326,69 @@ class DeepdubClient:
                 if verbose:
                     print(f"finished generation {message_received['generationId']}")
                 break
+
+    @asynccontextmanager
+    async def async_stream_connect(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
+        sample_rate: int = 16000, temperature: float = None, variance: float = None, tempo: float = None):
+        async with self.async_connect(streaming_input=True) as conn:
+            response = await conn.async_stream_config(model=model, 
+                locale=locale, voice_prompt_id=voice_prompt_id, 
+                format=format, sample_rate=sample_rate, 
+                temperature=temperature, variance=variance, tempo=tempo)
+            print(f"config ok: {response}")
+            yield conn
+
+    async def async_stream_config(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", sample_rate: int = 16000, temperature: float = None, variance: float = None, tempo: float = None):
+        self.streaming_format = format
+        message_to_send = {
+            "action": "stream-config",
+            "config": {
+                "model": model,
+                "locale": locale,
+                "voicePromptId": voice_prompt_id,
+                "format": format,
+                "sampleRate": sample_rate,
+                "temperature": temperature,
+                "variance": variance,
+                "tempo": tempo,
+            }
+        }
+        await self.websocket.send(json.dumps(message_to_send))
+        response = await self.websocket.recv()
+        return response
+
+    async def async_stream_text(self, text: str):
+        message_to_send = {
+            "action": "stream-text",
+            "data": { "text": text }
+        }
+        await self.websocket.send(json.dumps(message_to_send))
+
+    async def async_stream_recv(self):
+        response = await self.websocket.recv()
+        if not isinstance(response, bytes):
+            return None
+        response = json.loads(response)
+        if response.get("error"):
+            raise Exception(response["error"])        
+        return response
+    
+    async def async_stream_recv_audio(self):
+        response = await self.async_stream_recv()
+        if response and response.get("data"):
+            return base64.b64decode(response['data'])
+        return None
+
+    @asynccontextmanager
+    async def async_stream(self, ignore_errors: bool = False):
+        while True:
+            response = await self.websocket.recv()
+            if response.get("data"):
+                data = base64.b64decode(response['data'])
+                if self.streaming_format == "wav":
+                    data = data[self.dd_wav_header_len:]
+                yield data
+            if response.get("isFinished"):
+                continue
+            if response.get("error") and not ignore_errors:
+                raise Exception(response["error"])
