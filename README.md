@@ -1,4 +1,4 @@
-# DeepDub
+# Deepdub
 
 A Python client for interacting with the Deepdub API, which provides text-to-speech capabilities with voice cloning features.
 
