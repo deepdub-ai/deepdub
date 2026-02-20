@@ -1,6 +1,6 @@
-# DeepDub
+# Deepdub
 
-A Python client for interacting with the DeepDub API, which provides text-to-speech capabilities with voice cloning features.
+A Python client for interacting with the Deepdub API, which provides text-to-speech capabilities with voice cloning features.
 
 ## Installation
 
@@ -10,7 +10,7 @@ pip install deepdub
 
 ## Features
 
-- Interact with DeepDub's text-to-speech (TTS) API
+- Interact with Deepdub's text-to-speech (TTS) API
 - Add and manage voice profiles
 - Generate speech from text with specified voices
 - Command-line interface for easy usage

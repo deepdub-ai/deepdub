@@ -38,11 +38,12 @@ def add_voice(ctx, file: str, name: str, gender: str, locale: str, publish: bool
 @click.option("--voice-prompt-id", type=str, help="Voice ID of the voice to be used for the TTS", default="5d3dc622-69bd-4c00-9513-05df47dbdea6_authoritative")
 @click.option("--locale", type=str, help="Locale of the voice", default="en-US")
 @click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-2.5")
+@click.option("--temperature", type=float, help="Model temperature", default=None)
 @click.pass_context
-def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str):
+def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str, temperature: float):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
-    response = client.tts(text=text, voice_prompt_id=voice_prompt_id, locale=locale, model=model)
-    fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3".replace('"',"").replace("<","").replace(">","").replace("/","")
+    response = client.tts(text=text, voice_prompt_id=voice_prompt_id, locale=locale, model=model, temperature=temperature)
+    fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3".replace('"',"").replace("<","").replace(">","").replace("/","").replace(",","")
     with open(fname, "wb") as f:
         f.write(response)
     print(f"TTS response saved to {fname}")
@@ -56,7 +57,7 @@ def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str):
 def tts_from_ref(ctx, text: str, voice_reference: str, locale: str, model: str):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
     response = client.tts(text=text, voice_reference=Path(voice_reference), locale=locale, model=model)
-    fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3".replace('"',"").replace("<","").replace(">","").replace("/","")
+    fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3".replace('"',"").replace("<","").replace(">","").replace("/","").replace(",","")
     with open(fname, "wb") as f:
         f.write(response if isinstance(response, bytes) else str(response).encode("utf-8"))
     print(f"TTS response saved to {fname}")
@@ -72,6 +73,16 @@ def tts_retro(ctx, text: str, voice_prompt_id: str, locale: str, model: str):
     response = client.tts_retro(text=text, voice_prompt_id=voice_prompt_id, locale=locale, model=model)
     print(f"URL: {response['url']}")
 
+
+@cli.command()
+@click.option("--file", type=str, help="Audio file to classify gender from", required=True)
+@click.option("--sample-rate", type=int, help="Sample rate of the audio", default=16000)
+@click.option("--timeout", type=float, help="Response timeout in seconds", default=5.0)
+@click.pass_context
+def gender_classify(ctx, file: str, sample_rate: int, timeout: float):
+    client = DeepdubClient(api_key=ctx.obj["api_key"])
+    result = asyncio.run(client.gender_classify(audio_data=Path(file), sample_rate=sample_rate, timeout=timeout))
+    pprint(result)
 
 async def do_async_tts(client: DeepdubClient, text: str, voice_prompt_id: str, locale: str, model: str, format: str, sample_rate: int, headerless: bool):
     async with client.async_connect() as connection:
