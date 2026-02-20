@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deepdub"
-version = "0.1.21"
+version = "0.1.22"
 description = "A Python client for interacting with the Deepdub API"
 readme = "README.md"
 requires-python = ">=3.9"
