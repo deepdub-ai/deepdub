@@ -1,6 +1,6 @@
 import asyncio
 import time
-
+import os
 from audiosample import AudioSample
 import deepdub
 import json
@@ -8,6 +8,7 @@ import json
 
 async def main():
     dd = deepdub.DeepdubClient()
+    print("Streaming connecting....")
     async with dd.async_stream_connect(model=os.environ.get("DD_MODEL", "dd-etts-3.0"), locale="en-US",
         voice_prompt_id="408e3a63-d449-4e65-a098-ee18c542ec8e_reading-neutral", 
         sample_rate=16000, format="s16le") as conn:

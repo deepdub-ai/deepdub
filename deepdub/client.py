@@ -74,6 +74,7 @@ class DeepdubClient:
         self.dd_wav_header_len = 0x44
 
         self.websocket = None
+        self.connection_id = None
 
     def proxy_request(self, method: str, url: str, *args, **kwargs) -> Any:
         url = f"{self.base_url}{url}"
@@ -400,6 +401,12 @@ class DeepdubClient:
         accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None,
         verbose: bool = False):
         async with self.async_connect(streaming_input=True) as conn:
+            status = await conn._stream_recv_json()
+            if verbose:
+                print(f"connection status: {status}")
+            if status and status.get("action") == "error":
+                raise Exception(status.get("message", "Connection failed"))
+            conn.connection_id = status.get("connectionId") if status else None
             response = await conn.async_stream_config(model=model, 
                 locale=locale, voice_prompt_id=voice_prompt_id, 
                 format=format, sample_rate=sample_rate,     
@@ -434,8 +441,7 @@ class DeepdubClient:
             }
         }
         await self.websocket.send(json.dumps(message_to_send))
-        response = await self.websocket.recv()
-        return response
+        return None
 
     async def async_stream_text(self, text: str):
         message_to_send = {
@@ -444,16 +450,32 @@ class DeepdubClient:
         }
         await self.websocket.send(json.dumps(message_to_send))
 
-    async def async_stream_recv(self):
-        response = await self.websocket.recv()
-        if not isinstance(response, bytes):
-            return None
-        response = json.loads(response)
-        if response.get("error"):
-            raise Exception(response["error"])        
+    async def async_stream_cancel(self):
+        await self.websocket.send(json.dumps({"action": "cancel"}))
+
+    async def async_stream_end(self):
+        await self.websocket.send(json.dumps({"action": "end-stream"}))
+
+    async def async_stream_ping(self) -> dict:
+        await self.websocket.send(json.dumps({"action": "ping"}))
+        response = await self._stream_recv_json()
         return response
-    
-    async def async_stream_recv_audio(self):
+
+    async def _stream_recv_json(self) -> Optional[dict]:
+        raw = await self.websocket.recv()
+        if isinstance(raw, bytes):
+            return None
+        return json.loads(raw)
+
+    async def async_stream_recv(self) -> Optional[dict]:
+        response = await self._stream_recv_json()
+        if response is None:
+            return None
+        if response.get("error") and not response.get("generationId"):
+            raise Exception(response["error"])
+        return response
+
+    async def async_stream_recv_audio(self) -> Optional[bytes]:
         response = await self.async_stream_recv()
         if response and response.get("data"):
             return base64.b64decode(response['data'])
@@ -462,7 +484,19 @@ class DeepdubClient:
     @asynccontextmanager
     async def async_stream(self, ignore_errors: bool = False):
         while True:
-            response = await self.websocket.recv()
+            response = await self._stream_recv_json()
+            if response is None:
+                continue
+            action = response.get("action")
+            if action == "pong" or action == "status":
+                continue
+            if response.get("error"):
+                if response.get("generationId"):
+                    yield response
+                    continue
+                if not ignore_errors:
+                    raise Exception(response["error"])
+                continue
             if response.get("data"):
                 data = base64.b64decode(response['data'])
                 if self.streaming_format == "wav":
@@ -470,5 +504,3 @@ class DeepdubClient:
                 yield data
             if response.get("isFinished"):
                 continue
-            if response.get("error") and not ignore_errors:
-                raise Exception(response["error"])
