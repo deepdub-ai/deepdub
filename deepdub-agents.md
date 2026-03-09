@@ -338,9 +338,9 @@ async def play_audio_until_finished(conn):
 | Pattern | Time to first audio | Use case |
 |---------|---------------------|----------|
 | Batch REST | ~2-5s | Offline, pre-rendering |
-| Async WebSocket | ~1-3s | Parallel bulk generation |
-| Streaming TTS | ~200-500ms | Interactive, known text |
-| STT → LLM → Stream | ~500ms-1.5s (STT + LLM TTFT + TTS) | Voice agents |
+| Async WebSocket | ~125ms | Parallel bulk generation |
+| Streaming TTS | ~200ms (from first text token) | Interactive, known text |
+| STT → LLM → Stream | <1s (STT + LLM TTFT + TTS) | Voice agents |
 
 The streaming voice agent's perceived latency is dominated by:
 1. **STT finalization** — time for the STT to commit the transcript
