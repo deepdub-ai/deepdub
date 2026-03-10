@@ -396,7 +396,7 @@ class DeepdubClient:
 
     @asynccontextmanager
     async def async_stream_connect(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
-        sample_rate: int = 16000, temperature: float = None, variance: float = None, 
+        sample_rate: int = 16000, accept_emojis: bool = False, temperature: float = None, variance: float = None, 
         tempo: float = None, prompt_boost: bool = False, 
         accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None,
         verbose: bool = False):
@@ -410,6 +410,7 @@ class DeepdubClient:
             response = await conn.async_stream_config(model=model, 
                 locale=locale, voice_prompt_id=voice_prompt_id, 
                 format=format, sample_rate=sample_rate,     
+                accept_emojis=accept_emojis,
                 temperature=temperature, variance=variance, tempo=tempo, prompt_boost=prompt_boost,
                 accent_base_locale=accent_base_locale, accent_locale=accent_locale, accent_ratio=accent_ratio)
             if verbose:
@@ -417,7 +418,7 @@ class DeepdubClient:
             yield conn
 
     async def async_stream_config(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
-    sample_rate: int = 16000, temperature: float = None, variance: float = None, 
+    sample_rate: int = 16000, accept_emojis: bool = False, temperature: float = None, variance: float = None, 
     tempo: float = None, prompt_boost: bool = None,
     accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None):
         self.streaming_format = format
@@ -429,6 +430,7 @@ class DeepdubClient:
                 "voicePromptId": voice_prompt_id,
                 "format": format,
                 "sampleRate": sample_rate,
+                "acceptEmojis": accept_emojis,
                 "temperature": temperature,
                 "variance": variance,
                 "tempo": tempo,
@@ -463,8 +465,6 @@ class DeepdubClient:
 
     async def _stream_recv_json(self) -> Optional[dict]:
         raw = await self.websocket.recv()
-        if isinstance(raw, bytes):
-            return None
         return json.loads(raw)
 
     async def async_stream_recv(self) -> Optional[dict]:
