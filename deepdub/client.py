@@ -13,7 +13,7 @@ from audiosample import AudioSample
 import requests
 import websockets
 
-MODEL_LIST = ["dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
+MODEL_LIST = ["dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
 
 class DeepdubClient:
     """
