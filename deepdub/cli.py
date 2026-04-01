@@ -37,7 +37,7 @@ def add_voice(ctx, file: str, name: str, gender: str, locale: str, publish: bool
 @click.option("--text", type=str, help="Text to be converted to speech", required=True)
 @click.option("--voice-prompt-id", type=str, help="Voice ID of the voice to be used for the TTS", default="5d3dc622-69bd-4c00-9513-05df47dbdea6_authoritative")
 @click.option("--locale", type=str, help="Locale of the voice", default="en-US")
-@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-2.5")
+@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-3.2")
 @click.option("--temperature", type=float, help="Model temperature", default=None)
 @click.pass_context
 def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str, temperature: float):
@@ -52,7 +52,7 @@ def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str, temperatu
 @click.option("--text", type=str, help="Text to be converted to speech", required=True)
 @click.option("--voice-reference", type=str, help="Audio file with voice reference data be used for the TTS", required=True)
 @click.option("--locale", type=str, help="Locale of the voice", default="en-US")
-@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-2.5")
+@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-3.2")
 @click.pass_context
 def tts_from_ref(ctx, text: str, voice_reference: str, locale: str, model: str):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
@@ -66,7 +66,7 @@ def tts_from_ref(ctx, text: str, voice_reference: str, locale: str, model: str):
 @click.option("--text", type=str, help="Text to be converted to speech", required=True)
 @click.option("--voice-prompt-id", type=str, help="Voice ID of the voice to be used for the TTS", default="5d3dc622-69bd-4c00-9513-05df47dbdea6_authoritative")
 @click.option("--locale", type=str, help="Locale of the voice", default="en-US")
-@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-2.5")
+@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-3.2")
 @click.pass_context
 def tts_retro(ctx, text: str, voice_prompt_id: str, locale: str, model: str):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
@@ -93,7 +93,7 @@ async def do_async_tts(client: DeepdubClient, text: str, voice_prompt_id: str, l
 @click.option("--text", type=str, help="Text to be converted to speech", required=True)
 @click.option("--voice-prompt-id", type=str, help="Voice ID of the voice to be used for the TTS", default="5d3dc622-69bd-4c00-9513-05df47dbdea6_authoritative")
 @click.option("--locale", type=str, help="Locale of the voice", default="en-US")
-@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-2.5")
+@click.option("--model", type=str, help="Model to be used for the TTS", default="dd-etts-3.2")
 @click.option("--format", type=str, help="Format of the output audio", default="wav")
 @click.option("--sample-rate", type=int, help="Sample rate of the output audio", default=48000)
 @click.option("--headerless", type=bool, help="Whether to include the WAV header", is_flag=True, default=False)

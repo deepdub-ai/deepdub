@@ -141,7 +141,7 @@ class DeepdubClient:
     def tts(self, text: str, 
             voice_reference: Optional[Union[bytes, str, Path]] = None,
             voice_prompt_id: Optional[str] = None, 
-            model: str = "dd-etts-2.5", 
+            model: str = "dd-etts-3.2", 
             locale: str = "en-US",
             temperature: Optional[float] = None,
             variance: Optional[float] = None,
@@ -191,14 +191,14 @@ class DeepdubClient:
                 **kwargs
             })
 
-    def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-2.5", locale: str = "en-US") -> str:
+    def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-3.2", locale: str = "en-US") -> str:
         """
         TTS (Text-to-Speech) endpoint.
         """
         assert model in MODEL_LIST or not model.startswith("dd-"), "Invalid model"
         return self.post("/tts/retroactive", json={
                 "targetText": text,
-                "model": "dd-etts-2.5",
+                "model": "dd-etts-3.2",
                 "voicePromptId": voice_prompt_id,
                 "locale": locale,
             })
@@ -310,7 +310,7 @@ class DeepdubClient:
 
     async def async_tts(self, text: str,
             voice_prompt_id: Optional[str] = None,
-            model: str = "dd-etts-2.5",
+            model: str = "dd-etts-3.2",
             locale: str = "en-US",
             temperature: Optional[float] = None,
             variance: Optional[float] = None,

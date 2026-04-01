@@ -40,7 +40,7 @@ client = DeepdubClient()
 audio = client.tts(
     text="Welcome to DeepDub.",
     voice_prompt_id="your-voice-id",
-    model="dd-etts-3.0",
+    model="dd-etts-3.2",
     locale="en-US",
     format="mp3",
 )
@@ -74,7 +74,7 @@ async with client.async_connect() as conn:
     async for chunk in conn.async_tts(
         text="Hello from the async path.",
         voice_prompt_id="your-voice-id",
-        model="dd-etts-3.0",
+        model="dd-etts-3.2",
     ):
         audio += AudioSample(chunk)
     audio.write("output.wav")
@@ -101,7 +101,7 @@ from audiosample import AudioSample
 client = DeepdubClient()
 
 async with client.async_stream_connect(
-    model="dd-etts-3.0",
+    model="dd-etts-3.2",
     locale="en-US",
     voice_prompt_id="your-voice-id",
     sample_rate=16000,
@@ -162,7 +162,7 @@ import base64
 from deepdub import DeepdubClient
 
 VOICE_ID = "your-voice-prompt-id"
-MODEL = "dd-etts-3.0"
+MODEL = "dd-etts-3.2"
 LOCALE = "en-US"
 SAMPLE_RATE = 16000
 FORMAT = "s16le"
@@ -347,7 +347,7 @@ The streaming voice agent's perceived latency is dominated by:
 2. **LLM time-to-first-token** — time for the LLM to start responding
 3. **TTS director buffering** — the director waits for enough text to form a natural speech segment before dispatching
 
-Items 1 and 2 are outside DeepDub's control. Item 3 is typically 100-300ms once tokens start flowing.
+Items 1 and 2 are outside DeepDub's control. Item 3 is typically 100-3.2ms once tokens start flowing.
 
 ---
 
