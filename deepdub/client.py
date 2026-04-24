@@ -333,7 +333,7 @@ class DeepdubClient:
         #tempo and duration are mutually exclusive
         assert tempo is None or duration is None, "Tempo and duration are mutually exclusive"
         assert model in MODEL_LIST or not model.startswith("dd-"), "Invalid model"
-        assert format in ["headerless-wav", "wav", "mp3", "opus", "mulaw"], "Invalid format"
+        assert format in ["headerless-wav", "s16le", "wav", "mp3", "opus", "mulaw"], "Invalid format"
         headerless = False
         if format == "headerless-wav":
             format = "wav"
