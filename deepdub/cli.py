@@ -2,10 +2,13 @@ import time
 import datetime
 import sys
 import asyncio
+import logging
 import click
 from pprint import pprint
 from deepdub import DeepdubClient
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 @click.group()
 @click.option("--api-key", type=str, help="API key for authentication", envvar="DEEPDUB_API_KEY")
@@ -46,7 +49,7 @@ def tts(ctx, text: str, voice_prompt_id: str, locale: str, model: str, temperatu
     fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3".replace('"',"").replace("<","").replace(">","").replace("/","").replace(",","")
     with open(fname, "wb") as f:
         f.write(response)
-    print(f"TTS response saved to {fname}")
+    logger.info("TTS response saved to %s", fname)
 
 @cli.command()
 @click.option("--text", type=str, help="Text to be converted to speech", required=True)
@@ -60,7 +63,7 @@ def tts_from_ref(ctx, text: str, voice_reference: str, locale: str, model: str):
     fname = f"Deepdub-{text.replace(' ', '-')}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.mp3".replace('"',"").replace("<","").replace(">","").replace("/","").replace(",","")
     with open(fname, "wb") as f:
         f.write(response if isinstance(response, bytes) else str(response).encode("utf-8"))
-    print(f"TTS response saved to {fname}")
+    logger.info("TTS response saved to %s", fname)
 
 @cli.command()
 @click.option("--text", type=str, help="Text to be converted to speech", required=True)
@@ -71,7 +74,7 @@ def tts_from_ref(ctx, text: str, voice_reference: str, locale: str, model: str):
 def tts_retro(ctx, text: str, voice_prompt_id: str, locale: str, model: str):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
     response = client.tts_retro(text=text, voice_prompt_id=voice_prompt_id, locale=locale, model=model)
-    print(f"URL: {response['url']}")
+    logger.info("URL: %s", response['url'])
 
 
 @cli.command()
@@ -97,13 +100,13 @@ async def do_async_tts(client: DeepdubClient, text: str, voice_prompt_id: str, l
 @click.option("--format", type=str, help="Format of the output audio", default="wav")
 @click.option("--sample-rate", type=int, help="Sample rate of the output audio", default=48000)
 @click.option("--headerless", type=bool, help="Whether to include the WAV header", is_flag=True, default=False)
-@click.option("--verbose", type=bool, help="Whether to print verbose output", is_flag=True, default=False)
 @click.pass_context
-def tts_async(ctx, text: str, voice_prompt_id: str, locale: str, model: str, format: str, sample_rate: int, headerless: bool, verbose: bool):
+def tts_async(ctx, text: str, voice_prompt_id: str, locale: str, model: str, format: str, sample_rate: int, headerless: bool):
     client = DeepdubClient(api_key=ctx.obj["api_key"])
     asyncio.run(do_async_tts(client, text, voice_prompt_id, locale, model, format, sample_rate, headerless))
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     cli(obj={})
 
 if __name__ == "__main__":

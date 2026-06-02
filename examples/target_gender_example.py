@@ -7,8 +7,12 @@ of the synthesized voice output.
 import asyncio
 import sys
 import os
+import logging
 from deepdub import DeepdubClient
 from audiosample import AudioSample
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 client = DeepdubClient()
 
@@ -34,7 +38,7 @@ async def generate_with_target_gender(text: str, source_gender: str, target_gend
         ):
             collection += AudioSample(chunk)
     collection.write(output_file)
-    print(f"\nSaved {target_gender} voice to {output_file}")
+    logger.info("Saved %s voice to %s", target_gender, output_file)
 
 
 async def main():

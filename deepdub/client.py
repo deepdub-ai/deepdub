@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+import logging
 import os
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -12,6 +13,8 @@ from audiosample import AudioSample
 
 import requests
 import websockets
+
+logger = logging.getLogger(__name__)
 
 MODEL_LIST = ["dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
 
@@ -264,7 +267,7 @@ class DeepdubClient:
                     try:
                         message = json.loads(message)
                     except Exception:
-                        print(f"[_ws_listener] Error parsing message: {message}")
+                        logger.exception("[_ws_listener] Error parsing message: %s", message)
                         raise RuntimeError(f"Error parsing message: {message}")
 
                     generation_id = message.get("generationId")
@@ -325,7 +328,6 @@ class DeepdubClient:
             generation_id: Optional[str] = None,
             sample_rate: Optional[int] = None,
             target_gender: Optional[str] = None,
-            verbose: bool = False,
             **kwargs) -> str:
         """
         TTS (Text-to-Speech) endpoint.
@@ -372,38 +374,32 @@ class DeepdubClient:
                 **kwargs
             }
         await self.websocket.send(json.dumps(message_to_send))
-        if verbose:
-            print(f"sent message {message_to_send}")
+        logger.debug("sent message %s", message_to_send)
         while True:
             message_received = await self._ws_queues[generation_id].get()
             if message_received.get("error"):
                 raise Exception(message_received["error"])
             if message_received.get("generationId") != generation_id:
                 continue
-            if verbose:
-                print(f"received chunk {message_received['generationId']} - {message_received.get('index', 'unknown') }")
+            logger.debug("received chunk %s - %s", message_received['generationId'], message_received.get('index', 'unknown'))
             if message_received.get("data"):
-                if verbose:
-                    print(f"received data {message_received['data']}")
+                logger.debug("received data %s", message_received['data'])
                 data = base64.b64decode(message_received['data'])
                 if format == "wav" and headerless:
                     data = data[self.dd_wav_header_len:]
                 yield data
             if message_received.get("isFinished"):
-                if verbose:
-                    print(f"finished generation {message_received['generationId']}")
+                logger.debug("finished generation %s", message_received['generationId'])
                 break
 
     @asynccontextmanager
     async def async_stream_connect(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
         sample_rate: int = 16000, accept_emojis: bool = False, temperature: float = None, variance: float = None, 
         tempo: float = None, prompt_boost: bool = False, 
-        accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None,
-        verbose: bool = False):
+        accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None):
         async with self.async_connect(streaming_input=True) as conn:
             status = await conn._stream_recv_json()
-            if verbose:
-                print(f"connection status: {status}")
+            logger.debug("connection status: %s", status)
             if status and status.get("action") == "error":
                 raise Exception(status.get("message", "Connection failed"))
             conn.connection_id = status.get("connectionId") if status else None
@@ -413,8 +409,7 @@ class DeepdubClient:
                 accept_emojis=accept_emojis,
                 temperature=temperature, variance=variance, tempo=tempo, prompt_boost=prompt_boost,
                 accent_base_locale=accent_base_locale, accent_locale=accent_locale, accent_ratio=accent_ratio)
-            if verbose:
-                print(f"config ok: {response}")
+            logger.debug("config ok: %s", response)
             yield conn
 
     async def async_stream_config(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 

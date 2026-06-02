@@ -5,9 +5,13 @@ This example shows how to classify the gender of a speaker from an audio sample.
 The API automatically trims audio to the first 1 second.
 """
 import asyncio
+import logging
 from pathlib import Path
 from deepdub import DeepdubClient
 from audiosample import AudioSample
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 client = DeepdubClient()
 
@@ -17,28 +21,28 @@ VOICE_PROMPT_ID = "5d3dc622-69bd-4c00-9513-05df47dbdea6_authoritative"
 
 async def classify_from_file(audio_path: Path):
     """Classify gender from an audio file."""
-    print(f"Classifying gender from file: {audio_path}")
+    logger.info("Classifying gender from file: %s", audio_path)
     result = await client.gender_classify(audio_path)
-    print(f"  Predicted gender: {result['predicted_gender']}")
-    print(f"  Confidence: {result['confidence']}")
+    logger.info("  Predicted gender: %s", result['predicted_gender'])
+    logger.info("  Confidence: %s", result['confidence'])
     return result
 
 
 async def classify_from_audio(audio: AudioSample):
     """Classify gender from an AudioSample."""
-    print("Classifying gender from AudioSample...")
+    logger.info("Classifying gender from AudioSample...")
     # Use as_wav_data() to get properly formatted audio bytes
     result = await client.gender_classify(audio.as_wav_data())
-    print(f"  Predicted gender: {result['predicted_gender']}")
-    print(f"  Confidence: {result['confidence']}")
+    logger.info("  Predicted gender: %s", result['predicted_gender'])
+    logger.info("  Confidence: %s", result['confidence'])
     return result
 
 
 async def main():
     # Example 1: Generate audio and classify it
-    print("=" * 50)
-    print("Example 1: Generate TTS and classify gender")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("Example 1: Generate TTS and classify gender")
+    logger.info("=" * 50)
     
     # First generate some audio using TTS
     audio = AudioSample()
@@ -52,20 +56,20 @@ async def main():
     
     # Save for later use
     audio.write("test_audio.wav")
-    print(f"Generated test audio: test_audio.wav\n")
+    logger.info("Generated test audio: test_audio.wav\n")
     
     # Classify from AudioSample
     await classify_from_audio(audio)
     
     # Example 2: Classify from file
-    print("\n" + "=" * 50)
-    print("Example 2: Classify from file path")
-    print("=" * 50)
+    logger.info("\n" + "=" * 50)
+    logger.info("Example 2: Classify from file path")
+    logger.info("=" * 50)
     await classify_from_file(Path("test_audio.wav"))
     
     # Cleanup
     Path("test_audio.wav").unlink(missing_ok=True)
-    print("\nDone!")
+    logger.info("\nDone!")
 
 
 if __name__ == "__main__":
