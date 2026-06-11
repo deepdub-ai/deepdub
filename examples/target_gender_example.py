@@ -27,7 +27,9 @@ VOICE_PROMPT_ID_MALE = "8ce8efb6-26f4-4613-9ebb-d616ace449b3_reading-neutral" #e
 async def generate_with_target_gender(text: str, source_gender: str, target_gender: str, output_file: str):
     """Generate TTS with specified target gender."""
     collection = AudioSample()
+    print("Conn....")
     async with client.async_connect() as connection:
+        print("Gen....")
         async for chunk in connection.async_tts(
             text=text,
             model=os.environ.get("DD_MODEL"),

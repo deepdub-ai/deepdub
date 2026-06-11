@@ -15,7 +15,7 @@ import websockets
 
 logger = logging.getLogger(__name__)
 
-MODEL_LIST = ["dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
+MODEL_LIST = ["dd-etts-3.3", "dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
 
 class DeepdubClient:
     """
@@ -393,9 +393,13 @@ class DeepdubClient:
                 break
 
     @asynccontextmanager
-    async def async_stream_connect(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
-        sample_rate: int = 16000, accept_emojis: bool = False, temperature: float = None, variance: float = None, 
-        tempo: float = None, prompt_boost: bool = False, 
+    async def async_stream_connect(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav",
+        sample_rate: int = 16000, accept_emojis: bool = False,
+        target_gender: str = None, first_audio_timeout: float = None, realtime: bool = None,
+        # Deprecated: accepted for backwards compatibility only, ignored and not sent.
+        # The streaming service does not support these parameters; use logging for verbose output.
+        verbose: bool = False,
+        temperature: float = None, variance: float = None, tempo: float = None, prompt_boost: bool = None,
         accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None):
         async with self.async_connect(streaming_input=True) as conn:
             status = await conn._stream_recv_json()
@@ -403,39 +407,40 @@ class DeepdubClient:
             if status and status.get("action") == "error":
                 raise Exception(status.get("message", "Connection failed"))
             conn.connection_id = status.get("connectionId") if status else None
-            response = await conn.async_stream_config(model=model, 
-                locale=locale, voice_prompt_id=voice_prompt_id, 
-                format=format, sample_rate=sample_rate,     
+            response = await conn.async_stream_config(model=model,
+                locale=locale, voice_prompt_id=voice_prompt_id,
+                format=format, sample_rate=sample_rate,
                 accept_emojis=accept_emojis,
-                temperature=temperature, variance=variance, tempo=tempo, prompt_boost=prompt_boost,
-                accent_base_locale=accent_base_locale, accent_locale=accent_locale, accent_ratio=accent_ratio)
+                target_gender=target_gender, first_audio_timeout=first_audio_timeout,
+                realtime=realtime)
             logger.debug("config ok: %s", response)
             yield conn
 
-    async def async_stream_config(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav", 
-    sample_rate: int = 16000, accept_emojis: bool = False, temperature: float = None, variance: float = None, 
-    tempo: float = None, prompt_boost: bool = None,
+    async def async_stream_config(self, model: str, locale: str, voice_prompt_id: str, format: str = "wav",
+    sample_rate: int = 16000, accept_emojis: bool = False,
+    target_gender: str = None, first_audio_timeout: float = None, realtime: bool = None,
+    # Deprecated: accepted for backwards compatibility only, ignored and not sent.
+    # The streaming service does not support these parameters.
+    temperature: float = None, variance: float = None, tempo: float = None, prompt_boost: bool = None,
     accent_base_locale: str = None, accent_locale: str = None, accent_ratio: float = None):
         self.streaming_format = format
+        config = {
+            "model": model,
+            "locale": locale,
+            "voicePromptId": voice_prompt_id,
+            "format": format,
+            "sampleRate": sample_rate,
+            "acceptEmojis": accept_emojis,
+        }
+        if target_gender is not None:
+            config["targetGender"] = target_gender
+        if first_audio_timeout is not None:
+            config["firstAudioTimeout"] = first_audio_timeout
+        if realtime is not None:
+            config["realtime"] = realtime
         message_to_send = {
             "action": "stream-config",
-            "config": {
-                "model": model,
-                "locale": locale,
-                "voicePromptId": voice_prompt_id,
-                "format": format,
-                "sampleRate": sample_rate,
-                "acceptEmojis": accept_emojis,
-                "temperature": temperature,
-                "variance": variance,
-                "tempo": tempo,
-                "promptBoost": prompt_boost,
-                "accentControl": {
-                    "accentBaseLocale": accent_base_locale,
-                    "accentLocale": accent_locale,
-                    "accentRatio": accent_ratio
-                } if accent_base_locale is not None and accent_locale is not None and accent_ratio is not None else None,
-            }
+            "config": config
         }
         await self.websocket.send(json.dumps(message_to_send))
         return None

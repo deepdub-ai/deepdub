@@ -56,6 +56,7 @@ async def main():
             except asyncio.TimeoutError:
                 logger.info("Timeout, stopping after %s seconds", time.time() - t1)
                 break
+        print("hhhhhhhh")
         audio.write("websocket_streaming_example_output_1.wav")
         t1 = time.time()
         ttfa = False
