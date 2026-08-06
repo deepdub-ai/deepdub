@@ -456,8 +456,15 @@ class DeepdubClient:
         await self.websocket.send(json.dumps({"action": "cancel"}))
 
     async def async_stream_end(self):
+        """
+            Same as flush.
+        """
         await self.websocket.send(json.dumps({"action": "end-stream"}))
-
+    async def async_flush(self):
+        """
+            Flushes the buffer.
+        """
+        await self.websocket.send(json.dumps({"action": "end-stream"}))
     async def async_stream_ping(self) -> dict:
         await self.websocket.send(json.dumps({"action": "ping"}))
         response = await self._stream_recv_json()

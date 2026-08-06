@@ -98,6 +98,28 @@ audio_url = response["url"]
 
 Returns a dictionary containing the URL to the generated audio.
 
+#### Streaming Text-to-Speech
+
+```python
+# Stream text in, get audio chunks back over a single websocket connection
+async with client.async_stream_connect(
+    model="dd-etts-3.2",
+    locale="en-US",
+    voice_prompt_id="your-voice-id",
+    format="s16le",
+    sample_rate=16000,
+    accept_emojis=True,  # enable inline emoji controls (default: False)
+) as conn:
+    await conn.async_stream_text("Hello world! 😀 This part sounds happy.")
+    chunk = await conn.async_stream_recv_audio()
+```
+
+See `examples/websocket_streaming_example.py` for a complete example. The text stream can carry
+inline control tokens — `<config>` tags, `[emotion]` tags, and (with `accept_emojis=True`)
+emotion/flag emojis that switch voice, emotion, or language mid-stream. See
+[docs/streaming-inline-controls.md](docs/streaming-inline-controls.md) for the full list of
+supported tokens and behavior.
+
 ### Command Line Interface
 
 ```bash

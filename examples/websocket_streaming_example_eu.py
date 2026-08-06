@@ -10,7 +10,7 @@ async def main():
     # eu=True targets the EU streaming endpoint: wss://wss.eu.deepdub.ai/ws
     dd = deepdub.DeepdubClient(eu=True)
     print("Streaming connecting (EU)....")
-    async with dd.async_stream_connect(model=os.environ.get("DD_MODEL", "dd-etts-3.3"), locale="en-US",
+    async with dd.async_stream_connect(model=os.environ.get("DD_MODEL", "dd-etts-3.3"), locale="es-MX",
         voice_prompt_id="408e3a63-d449-4e65-a098-ee18c542ec8e_reading-neutral",
         sample_rate=16000, format="s16le") as conn:
         t1 = time.time()
