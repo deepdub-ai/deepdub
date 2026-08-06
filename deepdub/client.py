@@ -9,7 +9,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
-from audiosample import AudioSample
 
 import requests
 import websockets
@@ -224,6 +223,7 @@ class DeepdubClient:
         Returns:
             Dictionary with gender classification result
         """
+        from audiosample import AudioSample
         audio = AudioSample(audio_data, force_sample_rate=16000)[0:1]
         audio_b64 = base64.b64encode(audio.as_wav_data()).decode()
 
