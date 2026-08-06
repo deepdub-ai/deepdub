@@ -15,7 +15,7 @@ import websockets
 
 logger = logging.getLogger(__name__)
 
-MODEL_LIST = ["dd-etts-3.3", "dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
+MODEL_LIST = ["dd-etts-3.5", "dd-etts-3.4", "dd-etts-3.3", "dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
 
 class DeepdubClient:
     """
@@ -167,7 +167,8 @@ class DeepdubClient:
         if voice_reference is not None:
             voice_reference, _ = self.data_input_preprocess(voice_reference)
         
-        assert model in MODEL_LIST or not model.startswith("dd-"), "Invalid model"
+        if model not in MODEL_LIST and model.startswith("dd-"):
+            logger.warning("Unknown model %r, expected one of %s", model, MODEL_LIST)
         assert [3,0].__contains__(sum([accent_base_locale is not None, accent_locale is not None, accent_ratio is not None])), "All three of accent_base_locale, accent_locale, and accent_ratio must be provided or none of them must be provided"
         assert sample_rate in [None, 8000, 16000, 22050, 24000, 44100, 48000], "Invalid sample rate"
 
@@ -197,7 +198,8 @@ class DeepdubClient:
         """
         TTS (Text-to-Speech) endpoint.
         """
-        assert model in MODEL_LIST or not model.startswith("dd-"), "Invalid model"
+        if model not in MODEL_LIST and model.startswith("dd-"):
+            logger.warning("Unknown model %r, expected one of %s", model, MODEL_LIST)
         return self.post("/tts/retroactive", json={
                 "targetText": text,
                 "model": "dd-etts-3.2",
@@ -334,7 +336,8 @@ class DeepdubClient:
         """
         #tempo and duration are mutually exclusive
         assert tempo is None or duration is None, "Tempo and duration are mutually exclusive"
-        assert model in MODEL_LIST or not model.startswith("dd-"), "Invalid model"
+        if model not in MODEL_LIST and model.startswith("dd-"):
+            logger.warning("Unknown model %r, expected one of %s", model, MODEL_LIST)
         assert format in ["headerless-wav", "s16le", "wav", "mp3", "opus", "mulaw"], "Invalid format"
         headerless = False
         if format == "headerless-wav":
