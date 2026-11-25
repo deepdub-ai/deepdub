@@ -18,6 +18,12 @@ class TestDeepdubClient(unittest.TestCase):
         client = DeepdubClient()
         self.assertEqual(client.api_key, "env_test_key")
         
+    @patch('deepdub.client.requests.Session')
+    @patch('os.environ', {})
+    def test_websocket_url(self, mock_session):
+        self.assertEqual(DeepdubClient(api_key="k").base_websocket_url, "wss://wsgw.deepdub.ai/open")
+        self.assertEqual(DeepdubClient(api_key="k", eu=True).base_websocket_url, "wss://wsgw.eu.deepdub.ai/open")
+
     @patch('deepdub.client.requests.get')
     def test_list_voices(self, mock_get):
         # Setup mock

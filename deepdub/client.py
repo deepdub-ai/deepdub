@@ -15,7 +15,7 @@ import websockets
 
 logger = logging.getLogger(__name__)
 
-MODEL_LIST = ["dd-etts-3.5", "dd-etts-3.4", "dd-etts-3.3", "dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
+MODEL_LIST = ["dd-etts-4", "dd-etts-3.5", "dd-etts-3.4", "dd-etts-3.3", "dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
 
 class DeepdubClient:
     """
@@ -62,7 +62,7 @@ class DeepdubClient:
         region = ".eu" if eu else ""
 
         self.base_url = base_url or os.environ.get("DEEPDUB_BASE_URL") or f"https://restapi{region}.deepdub.ai/api/v1"
-        self.base_websocket_url = base_websocket_url or os.environ.get("DEEPDUB_BASE_WEBSOCKET_URL") or f"wss://wsapi{region}.deepdub.ai/open"
+        self.base_websocket_url = base_websocket_url or os.environ.get("DEEPDUB_BASE_WEBSOCKET_URL") or f"wss://wsgw{region}.deepdub.ai/open"
         self.base_websocket_streaming_url = base_websocket_streaming_url or os.environ.get("DEEPDUB_BASE_WEBSOCKET_STREAMING_URL") or f"wss://wss{region}.deepdub.ai/ws"
         self.api_key = api_key
         if not self.api_key:
