@@ -70,7 +70,7 @@ Returns the server response with voice information.
 audio_data = client.tts(
     text="Text to be converted to speech",
     voice_prompt_id="your-voice-id",
-    model="dd-etts-3.2",  # Default: "dd-etts-3.2"
+    model="dd-etts-4.0",  # Default: "dd-etts-4.0"
     locale="en-US"  # Default: "en-US"
 )
 
@@ -88,7 +88,7 @@ Returns binary audio data.
 response = client.tts_retro(
     text="Text to be converted to speech",
     voice_prompt_id="your-voice-id",
-    model="dd-etts-3.2",  # Default: "dd-etts-3.2"
+    model="dd-etts-4.0",  # Default: "dd-etts-4.0"
     locale="en-US"  # Default: "en-US"
 )
 

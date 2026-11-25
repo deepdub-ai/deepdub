@@ -15,7 +15,7 @@ import websockets
 
 logger = logging.getLogger(__name__)
 
-MODEL_LIST = ["dd-etts-4", "dd-etts-3.5", "dd-etts-3.4", "dd-etts-3.3", "dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
+MODEL_LIST = ["dd-etts-4.0", "dd-etts-3.5", "dd-etts-3.4", "dd-etts-3.3", "dd-etts-3.2", "dd-etts-3.0", "dd-etts-2.5", "dd-etts-1.1"]
 
 class DeepdubClient:
     """
@@ -143,7 +143,7 @@ class DeepdubClient:
     def tts(self, text: str, 
             voice_reference: Optional[Union[bytes, str, Path]] = None,
             voice_prompt_id: Optional[str] = None, 
-            model: str = "dd-etts-3.2", 
+            model: str = "dd-etts-4.0", 
             locale: str = "en-US",
             temperature: Optional[float] = None,
             variance: Optional[float] = None,
@@ -194,7 +194,7 @@ class DeepdubClient:
                 **kwargs
             })
 
-    def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-3.2", locale: str = "en-US") -> str:
+    def tts_retro(self, text: str, voice_prompt_id: str, model: str = "dd-etts-4.0", locale: str = "en-US") -> str:
         """
         TTS (Text-to-Speech) endpoint.
         """
@@ -315,7 +315,7 @@ class DeepdubClient:
 
     async def async_tts(self, text: str,
             voice_prompt_id: Optional[str] = None,
-            model: str = "dd-etts-3.2",
+            model: str = "dd-etts-4.0",
             locale: str = "en-US",
             temperature: Optional[float] = None,
             variance: Optional[float] = None,
